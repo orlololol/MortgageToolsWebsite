@@ -39,7 +39,7 @@ export const InsufficientSubscriptionModal = () => {
 
           <Image
             src="/assets/images/stacked-coins.png"
-            alt="subscription icon"
+            alt="subscription image"
             width={462}
             height={122}
           />
