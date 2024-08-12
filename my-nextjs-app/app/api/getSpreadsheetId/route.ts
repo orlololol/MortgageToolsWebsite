@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserById } from "../../../lib/actions/user.actions";
 
-const MAX_ATTEMPTS = 30;
-const DELAY_MS = 5000;
+const MAX_ATTEMPTS = 10;
+const DELAY_MS = 1000;
 
 async function waitForSpreadsheetCreation(userId: string): Promise<any> {
   let attempts = 0;
@@ -15,6 +15,7 @@ async function waitForSpreadsheetCreation(userId: string): Promise<any> {
     }
     await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
     attempts++;
+    console.log("Attempt", attempts, "to fetch spreadsheetId");
   }
   throw new Error("Spreadsheet creation timed out");
 }

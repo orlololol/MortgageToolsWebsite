@@ -197,14 +197,6 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
                     <FormMessage />
                   </FormItem>
                 ))}
-                <Button
-                  type="button"
-                  onClick={() => append({ file: undefined })}
-                  className="mt-2"
-                  disabled={!isSubscribed}
-                >
-                  Add Another File
-                </Button>
               </div>
               <div className="flex flex-col gap-4 mt-4">
                 <Button

@@ -64,7 +64,7 @@ async function handleSpreadsheetOperations(user: any) {
 
     await shareSpreadsheet(spreadsheetIdA, user.email);
     await shareSpreadsheet(spreadsheetIdBC, user.email);
-
+    console.log("Spreadsheets shared with user:", user.email);
     user.spreadsheetIds = {
       uploadDocumentA: spreadsheetIdA,
       uploadDocumentBC: spreadsheetIdBC,
