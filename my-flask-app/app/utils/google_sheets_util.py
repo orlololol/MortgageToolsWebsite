@@ -63,7 +63,7 @@ class SheetPopulator:
     def update_value(self, cell, value):
         self.worksheet.update_value(cell, value)
 
-    def get_earning_type(description):
+    def get_earning_type(self, description):
         # Assume description might have some indicator of type
         if "commission" in description:
             return "Commission"
@@ -109,7 +109,7 @@ class SheetPopulator:
 
             for entity in data:
                 type = entity['Type']
-                value = entity['Raw Value']
+                value = entity['Raw Value'].lower()
 
                 if not eoy_paystub:
                     if type in general_cell_map:
@@ -117,7 +117,7 @@ class SheetPopulator:
 
                     elif type == "earning_item":
                         parts = value.split()
-                        earning_type = self.get_earning_type(value.lower())
+                        earning_type = self.get_earning_type(value)
                         
                         if earning_type == "Regular":
                             regular_earnings += float(parts[-1].replace(',', '').replace('$', ''))
@@ -139,6 +139,7 @@ class SheetPopulator:
                         start_date = value
                     elif type == "end_date":
                         end_date = value
+                        self.worksheet.update_value(f"D{11 + row_offset}", end_date)
                     elif type == "pay_date":
                         paydate = value
                     elif type == "gross_earnings_ytd":
@@ -150,7 +151,7 @@ class SheetPopulator:
                 else:
                     if type == "earning_item":
                         parts = value.split()
-                        earning_type = self.get_earning_type(value.lower())
+                        earning_type = self.get_earning_type(value)
                         if earning_type == "Regular":
                             eoy_regular_earnings += float(parts[-1].replace(',', '').replace('$', ''))
                     elif type == "pay_date":
