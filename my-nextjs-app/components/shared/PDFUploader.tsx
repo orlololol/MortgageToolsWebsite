@@ -107,12 +107,6 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
       formData.append("document_type", values.document_type);
       formData.append("spreadsheetId", spreadsheetId || "");
 
-      values.files.forEach((fileObj, index) => {
-        if (fileObj.file) {
-          formData.append(`file_${index}`, fileObj.file);
-        }
-      });
-
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
       const response = await fetch(backendUrl, {
         method: "POST",
