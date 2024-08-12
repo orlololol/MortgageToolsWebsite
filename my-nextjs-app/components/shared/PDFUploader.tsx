@@ -27,7 +27,7 @@ const fileSchema = z.object({
     }),
 });
 
-const formSchema = z.object({
+export const formSchema = z.object({
   document_type: z.string().min(1, "Document type is required"),
   files: z.array(fileSchema).min(1, "At least one file is required"),
 });
