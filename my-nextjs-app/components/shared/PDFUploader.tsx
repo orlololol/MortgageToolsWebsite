@@ -104,9 +104,17 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
     setIsProcessing(true);
     try {
       const formData = new FormData();
-      formData.append("document_type", values.document_type);
+      formData.append(
+        "document_type",
+        type === "uploadDocumentBC" ? values.document_type : "1040"
+      );
       formData.append("spreadsheetId", spreadsheetId || "");
-
+      if (values.files[0]?.file) {
+        formData.append("file", values.files[0].file);
+      } else {
+        throw new Error("No file selected");
+      }
+      console.log("Processing PDF with data:", formData);
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
       const response = await fetch(backendUrl, {
         method: "POST",
