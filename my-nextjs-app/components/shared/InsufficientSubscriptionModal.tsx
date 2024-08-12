@@ -35,7 +35,7 @@ export const InsufficientSubscriptionModal: React.FC<
               className="border-0 p-0 hover:bg-transparent"
               onClick={() => {
                 onClose();
-                router.push("/profile");
+                router.push("/credits");
               }}
             >
               <Image

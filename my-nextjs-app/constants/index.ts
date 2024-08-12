@@ -35,7 +35,7 @@ export const plans = [
   {
     name: "Premium",
     price: 100,
-    priceId: "price_0PlkIclmRkSiWwnV5lzP5UEo", // Replace with actual Stripe price ID
+    priceId: "prod_QeIahe483L84iM", // Replace with actual Stripe price ID
     features: [
       "Full access to all features",
       "Unlimited uploads",

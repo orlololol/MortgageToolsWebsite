@@ -49,3 +49,12 @@ export async function shareSpreadsheet(spreadsheetId: string, email: string) {
     },
   });
 }
+
+export async function deleteEntries(spreadsheetId: string, range: string) {
+  console.log("Deleting entries starting", spreadsheetId, range);
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId,
+    range,
+  });
+  console.log("Deleting entries completed");
+}
