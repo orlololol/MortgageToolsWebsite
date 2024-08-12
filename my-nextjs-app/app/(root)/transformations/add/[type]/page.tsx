@@ -37,7 +37,7 @@ const AddTransformationTypePage = async ({
 
   if (!isSubscribed) {
     console.log("User is not subscribed. Redirecting to subscription page...");
-    redirect("/subscription");
+    redirect("/credits");
   }
 
   const transformation = transformationTypes[type];

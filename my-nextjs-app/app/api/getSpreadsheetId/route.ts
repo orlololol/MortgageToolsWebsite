@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserById } from "../../../lib/actions/user.actions";
 
 const MAX_ATTEMPTS = 30;
-const DELAY_MS = 1000;
+const DELAY_MS = 5000;
 
 async function waitForSpreadsheetCreation(userId: string): Promise<any> {
   let attempts = 0;

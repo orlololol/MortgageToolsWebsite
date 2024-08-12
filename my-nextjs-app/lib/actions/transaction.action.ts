@@ -19,8 +19,8 @@ export async function createSubscription({
   const session = await stripe.checkout.sessions.create({
     line_items: [{ price: priceId, quantity: 1 }],
     mode: "subscription",
-    success_url: `${process.env.NEXT_PUBLIC_SERVER_URL}/subscription?success=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_SERVER_URL}/subscription?canceled=true`,
+    success_url: `${process.env.NEXT_PUBLIC_SERVER_URL}/credits?success=true`,
+    cancel_url: `${process.env.NEXT_PUBLIC_SERVER_URL}/credits?canceled=true`,
     client_reference_id: buyerId,
   });
 

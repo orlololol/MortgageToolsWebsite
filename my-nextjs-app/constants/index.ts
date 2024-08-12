@@ -20,7 +20,7 @@ export const navLinks = [
   //   icon: "/assets/icons/profile.svg",
   // },
   {
-    label: "Buy Credits",
+    label: "Subscription Page",
     route: "/credits",
     icon: "/assets/icons/bag.svg",
   },
