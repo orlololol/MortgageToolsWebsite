@@ -1,5 +1,6 @@
 "use client";
-
+// InsufficientSubscriptionModal.tsx
+import React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -14,18 +15,28 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export const InsufficientSubscriptionModal = () => {
+interface InsufficientSubscriptionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const InsufficientSubscriptionModal: React.FC<
+  InsufficientSubscriptionModalProps
+> = ({ isOpen, onClose }) => {
   const router = useRouter();
 
   return (
-    <AlertDialog defaultOpen>
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <div className="flex-between">
             <p className="p-16-semibold text-dark-400">Subscription Required</p>
             <AlertDialogCancel
               className="border-0 p-0 hover:bg-transparent"
-              onClick={() => router.push("/profile")}
+              onClick={() => {
+                onClose();
+                router.push("/profile");
+              }}
             >
               <Image
                 src="/assets/icons/close.svg"
@@ -56,13 +67,19 @@ export const InsufficientSubscriptionModal = () => {
         <AlertDialogFooter>
           <AlertDialogCancel
             className="button w-full bg-purple-100 text-dark-400"
-            onClick={() => router.push("/credits")}
+            onClick={() => {
+              onClose();
+              router.push("/credits");
+            }}
           >
             Not Now
           </AlertDialogCancel>
           <AlertDialogAction
             className="button w-full bg-purple-gradient bg-cover"
-            onClick={() => router.push("/credits")}
+            onClick={() => {
+              onClose();
+              router.push("/credits");
+            }}
           >
             View Subscription Plans
           </AlertDialogAction>

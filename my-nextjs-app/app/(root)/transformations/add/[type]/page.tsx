@@ -19,7 +19,6 @@ const AddTransformationTypePage = async ({
   params: { type },
 }: SearchParamProps) => {
   const { userId } = auth();
-  console.log("userId", userId);
 
   if (!userId) {
     console.log("No userId found. Redirecting to sign-in...");
@@ -34,11 +33,6 @@ const AddTransformationTypePage = async ({
   }
 
   const isSubscribed = await checkSubscriptionStatus(user._id);
-
-  if (!isSubscribed) {
-    console.log("User is not subscribed. Redirecting to subscription page...");
-    redirect("/credits");
-  }
 
   const transformation = transformationTypes[type];
 
@@ -58,6 +52,7 @@ const AddTransformationTypePage = async ({
             action="Add"
             clerkId={user.clerkId}
             type={transformation.type as TransformationTypeKey}
+            isSubscribed={isSubscribed}
           />
         </div>
       </section>

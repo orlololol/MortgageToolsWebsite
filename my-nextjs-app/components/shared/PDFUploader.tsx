@@ -1,6 +1,4 @@
-"use client";
-
-import { useEffect, useState, useTransition } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -15,31 +13,20 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  getUserIdFromClerkId,
-  checkSubscriptionStatus,
-} from "@/lib/actions/user.actions";
-import { CustomField } from "./CustomField";
-import { ConfirmationModal } from "./ConfirmationModal";
-import { InsufficientSubscriptionModal } from "./InsufficientSubscriptionModal";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { InsufficientSubscriptionModal } from "./InsufficientSubscriptionModal";
 
 const fileSchema = z.object({
-  file: z.union([z.instanceof(File), z.undefined()]).refine(
-    (file) => {
-      if (file === undefined) {
-        return true;
-      }
-      return file.type === "application/pdf";
-    },
-    {
+  file: z
+    .instanceof(File)
+    .optional()
+    .refine((file) => !file || file.type === "application/pdf", {
       message: "File must be a PDF",
-    }
-  ),
+    }),
 });
 
-export const formSchema = z.object({
-  document_type: z.string().min(1, "Title is required"),
+const formSchema = z.object({
+  document_type: z.string().min(1, "Document type is required"),
   files: z.array(fileSchema).min(1, "At least one file is required"),
 });
 
@@ -49,39 +36,29 @@ interface PDFUploadFormProps {
   action: "Add" | "Update";
   clerkId: string;
   type: "uploadDocumentA" | "uploadDocumentBC";
+  isSubscribed: boolean;
   data?: Partial<FormValues> & { _id?: string };
-  documentUrl?: string;
 }
 
 const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
   action,
   clerkId,
   type,
-  data = null,
-  documentUrl,
+  isSubscribed,
+  data = {},
 }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
-  const [isSubscribed, setIsSubscribed] = useState(false);
   const router = useRouter();
-
-  const initialValues =
-    data?.document_type && action === "Update"
-      ? {
-          document_type: data.document_type,
-          files: data.files || [{ file: undefined }],
-        }
-      : ({
-          document_type: "1040",
-          files: [{ file: undefined }],
-        } as unknown as FormValues);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialValues,
+    defaultValues: {
+      document_type:
+        data.document_type || (type === "uploadDocumentBC" ? "" : "1040"),
+      files: data.files || [{ file: undefined }],
+    },
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -92,12 +69,10 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
   useEffect(() => {
     const fetchSpreadsheetId = async () => {
       try {
-        console.log("Fetching spreadsheet ID for user:", clerkId);
         const response = await fetch(
           `/api/getSpreadsheetId?userId=${clerkId}&type=${type}`
         );
         if (!response.ok) {
-          console.error("Failed to fetch spreadsheet ID", response.status);
           throw new Error("Failed to fetch spreadsheet ID");
         }
         const data = await response.json();
@@ -107,48 +82,34 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
       }
     };
 
-    const checkSubscription = async () => {
-      try {
-        const userId = await getUserIdFromClerkId(clerkId);
-        const subscriptionStatus = await checkSubscriptionStatus(userId);
-        setIsSubscribed(subscriptionStatus);
-      } catch (error) {
-        console.error("Error checking subscription status:", error);
-      }
-    };
-
     fetchSpreadsheetId();
-    checkSubscription();
   }, [clerkId, type]);
 
   const onProcessHandler = () => {
     if (!isSubscribed) {
-      setIsModalOpen(true);
+      setShowSubscriptionModal(true);
       return;
     }
     form.handleSubmit(onSubmit)();
   };
 
-  const handleConfirmProcess = () => {
-    setIsModalOpen(false);
-    setIsProcessing(true);
-    form.handleSubmit(onSubmit)();
-  };
+  async function onSubmit(values: FormValues) {
+    if (!isSubscribed) {
+      setShowSubscriptionModal(true);
+      return;
+    }
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsProcessing(true);
     try {
       const formData = new FormData();
-      formData.append(
-        "document_type",
-        type === "uploadDocumentBC" ? values.document_type : "1040"
-      );
+      formData.append("document_type", values.document_type);
       formData.append("spreadsheetId", spreadsheetId || "");
 
-      if (values.files[0]?.file) {
-        formData.append("file", values.files[0].file);
-      } else {
-        throw new Error("No file selected");
-      }
+      values.files.forEach((fileObj, index) => {
+        if (fileObj.file) {
+          formData.append(`file_${index}`, fileObj.file);
+        }
+      });
 
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
       const response = await fetch(backendUrl, {
@@ -162,10 +123,7 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
 
       const result = await response.json();
       console.log("Processing result:", result);
-
-      // Optionally, show a success message or redirect the user
       alert("PDF processed successfully.");
-      // router.push('/success-page');
     } catch (error) {
       console.error("Error processing PDF:", error);
       alert("An error occurred while processing the PDF. Please try again.");
@@ -184,7 +142,6 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
           }}
           className="space-y-8"
         >
-          {!isSubscribed && <InsufficientSubscriptionModal />}
           <div className="flex flex-row space-x-20">
             <div className="my-4">
               {type === "uploadDocumentBC" && (
@@ -196,6 +153,7 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
                       <FormLabel>Choose your file type</FormLabel>
                       <RadioGroup
                         onValueChange={field.onChange}
+                        defaultValue={field.value}
                         className="flex flex-col space-y-1"
                       >
                         <FormItem className="flex items-center space-x-3 space-y-0">
@@ -217,39 +175,43 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
               )}
 
               <div className="space-y-5">
-                <div className="mt-8">
-                  {fields.map((field, index) => (
-                    <FormItem key={field.id}>
-                      <FormLabel>Upload PDF</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="file"
-                          accept=".pdf"
-                          onChange={(
-                            e: React.ChangeEvent<HTMLInputElement>
-                          ) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              form.setValue(`files.${index}.file`, file);
-                            }
-                          }}
-                          className="input-field"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  ))}
-                </div>
-                <div className="flex flex-col gap-4">
-                  <Button
-                    type="button"
-                    className="submit-button capitalize"
-                    disabled={isProcessing || !isSubscribed}
-                    onClick={onProcessHandler}
-                  >
-                    {isProcessing ? "Processing..." : "Process PDFs"}
-                  </Button>
-                </div>
+                {fields.map((field, index) => (
+                  <FormItem key={field.id}>
+                    <FormLabel>Upload PDF</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            form.setValue(`files.${index}.file`, file);
+                          }
+                        }}
+                        className="input-field"
+                        disabled={!isSubscribed}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                ))}
+                <Button
+                  type="button"
+                  onClick={() => append({ file: undefined })}
+                  className="mt-2"
+                  disabled={!isSubscribed}
+                >
+                  Add Another File
+                </Button>
+              </div>
+              <div className="flex flex-col gap-4 mt-4">
+                <Button
+                  type="submit"
+                  className="submit-button capitalize"
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? "Processing..." : "Process PDFs"}
+                </Button>
               </div>
             </div>
             <div>
@@ -263,12 +225,11 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
             </div>
           </div>
         </form>
-        <ConfirmationModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onConfirm={handleConfirmProcess}
-        />
       </Form>
+      <InsufficientSubscriptionModal
+        isOpen={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+      />
     </div>
   );
 };
