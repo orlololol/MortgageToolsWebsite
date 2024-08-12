@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { InsufficientSubscriptionModal } from "./InsufficientSubscriptionModal";
-import { deleteEntries } from "@/app/api/googleSheets/googleSheetsServices";
+// import { deleteEntries } from "@/app/api/googleSheets/googleSheetsServices";
 
 const fileSchema = z.object({
   file: z
@@ -137,38 +137,38 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
     }
   }
 
-  const onClearEntriesHandler = async () => {
-    if (!spreadsheetId) {
-      alert("No spreadsheet ID found.");
-      return;
-    }
-    try {
-      await deleteEntries(spreadsheetId, "D11:D14");
-      await deleteEntries(spreadsheetId, "E11:E14");
-      await deleteEntries(spreadsheetId, "F11:F14");
-      await deleteEntries(spreadsheetId, "H11:H14");
-      await deleteEntries(spreadsheetId, "I11:I14");
-      await deleteEntries(spreadsheetId, "G11:G14");
-      await deleteEntries(spreadsheetId, "C4:C5");
-      await deleteEntries(spreadsheetId, "C17:C20");
-      await deleteEntries(spreadsheetId, "E19:E20");
-      await deleteEntries(spreadsheetId, "C24");
-      await deleteEntries(spreadsheetId, "F24");
-      await deleteEntries(spreadsheetId, "C34:C41");
-      await deleteEntries(spreadsheetId, "G39:G41");
-      await deleteEntries(spreadsheetId, "E40:E41");
-      await deleteEntries(spreadsheetId, "C49:C51");
-      await deleteEntries(spreadsheetId, "G49:G51");
-      await deleteEntries(spreadsheetId, "C62:C64");
-      await deleteEntries(spreadsheetId, "G67:G69");
-      await deleteEntries(spreadsheetId, "C82:C84");
-      await deleteEntries(spreadsheetId, "E83:E84");
-      await deleteEntries(spreadsheetId, "G82:G84");
-    } catch (error) {
-      console.error("Error clearing entries:", error);
-      alert("An error occurred while clearing the entries. Please try again.");
-    }
-  };
+  // const onClearEntriesHandler = async () => {
+  //   if (!spreadsheetId) {
+  //     alert("No spreadsheet ID found.");
+  //     return;
+  //   }
+  //   try {
+  //     await deleteEntries(spreadsheetId, "D11:D14");
+  //     await deleteEntries(spreadsheetId, "E11:E14");
+  //     await deleteEntries(spreadsheetId, "F11:F14");
+  //     await deleteEntries(spreadsheetId, "H11:H14");
+  //     await deleteEntries(spreadsheetId, "I11:I14");
+  //     await deleteEntries(spreadsheetId, "G11:G14");
+  //     await deleteEntries(spreadsheetId, "C4:C5");
+  //     await deleteEntries(spreadsheetId, "C17:C20");
+  //     await deleteEntries(spreadsheetId, "E19:E20");
+  //     await deleteEntries(spreadsheetId, "C24");
+  //     await deleteEntries(spreadsheetId, "F24");
+  //     await deleteEntries(spreadsheetId, "C34:C41");
+  //     await deleteEntries(spreadsheetId, "G39:G41");
+  //     await deleteEntries(spreadsheetId, "E40:E41");
+  //     await deleteEntries(spreadsheetId, "C49:C51");
+  //     await deleteEntries(spreadsheetId, "G49:G51");
+  //     await deleteEntries(spreadsheetId, "C62:C64");
+  //     await deleteEntries(spreadsheetId, "G67:G69");
+  //     await deleteEntries(spreadsheetId, "C82:C84");
+  //     await deleteEntries(spreadsheetId, "E83:E84");
+  //     await deleteEntries(spreadsheetId, "G82:G84");
+  //   } catch (error) {
+  //     console.error("Error clearing entries:", error);
+  //     alert("An error occurred while clearing the entries. Please try again.");
+  //   }
+  // };
 
   return (
     <div>
@@ -243,7 +243,7 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
                   {isProcessing ? "Processing..." : "Process PDFs"}
                 </Button>
               </div>
-              <div className="flex flex-col gap-4 mt-4">
+              {/* <div className="flex flex-col gap-4 mt-4">
                 <Button
                   type="button"
                   className="submit-button capitalize"
@@ -252,7 +252,7 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
                 >
                   Clear Entries
                 </Button>
-              </div>
+              </div> */}
             </div>
             <div>
               {spreadsheetId && (
