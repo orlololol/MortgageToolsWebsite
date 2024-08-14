@@ -206,6 +206,14 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
                           </FormControl>
                           <FormLabel className="font-normal">Paystub</FormLabel>
                         </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="eoy_paystub" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            End of Past Year Paystub
+                          </FormLabel>
+                        </FormItem>
                       </RadioGroup>
                     </FormItem>
                   )}
