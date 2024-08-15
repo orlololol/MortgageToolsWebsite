@@ -3,6 +3,7 @@ import os
 from ..utils.doc_ai_util import online_process
 from ..models.extraction_paystub import paystub_extractor as extract_paystub
 from ..models.extraction_w2 import w2_extractor as extract_w2
+from ..models.extraction_eoy_paystub import eoy_paystub_extractor as extract_eoy_paystub
 from app.config import get_config
 
 # Get the configuration for the current environment
@@ -20,7 +21,7 @@ def process_document_w2_paystub(file_path, mime_type, document_type, spreadsheet
     # Retrieve configuration from Flask app context
     project_id = config.PROJECT_ID
     location = config.LOCATION
-    if document_type == 'paystub':
+    if document_type == 'paystub' or document_type == 'eoy_paystub':
         processor_id = config.PAYSTUB_PROCESSOR_ID 
     elif document_type == 'w2': 
         processor_id = config.W2_PROCESSOR_ID
@@ -28,6 +29,8 @@ def process_document_w2_paystub(file_path, mime_type, document_type, spreadsheet
     # Call the appropriate extractor based on document type
     if document_type == 'paystub':
         return extract_paystub(project_id, location, processor_id, file_path, mime_type, spreadsheet_id)
+    elif document_type == 'eoy_paystub':
+        return extract_eoy_paystub(project_id, location, processor_id, file_path, mime_type, spreadsheet_id)
     elif document_type == 'w2':
         return extract_w2(project_id, location, processor_id, file_path, mime_type, spreadsheet_id)
     else:

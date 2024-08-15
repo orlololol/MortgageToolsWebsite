@@ -21,64 +21,65 @@ def extract_text(pdf_path, coords, page_number):
     print(f"Extracted text: {text.strip()}")
     return text.strip()
 
-def extract_amortization_value(text_block):
+def extract_line_of_2_value(text_block):
     """Extracts the monetary value for lines containing 'Amortization' or 'Casualty' followed by 'Loss'."""
     lines = text_block.split('\n')
+    results = []
     for i, line in enumerate(lines):
-        # Check for the presence of keywords in the current line
-        if re.search(r'\bamortization\b', line, re.IGNORECASE) and re.search(r'\bloss\b', line, re.IGNORECASE) or \
-           re.search(r'\bcasualty\b', line, re.IGNORECASE) and re.search(r'\bloss\b', line, re.IGNORECASE):
-            # Check if the next line exists and extract the monetary value
-            if i + 1 < len(lines):
-                next_line = lines[i + 1]
-                matches = re.findall(r'\d+[\.,\d+]*', next_line)
-                if matches:
-                    # Return the first match, removing commas and periods for clean numeric value
-                    return matches[0].replace(',', '').replace('.', '')
-    return None
+        results.append(line.replace(',', '').replace('.', '')) 
+    return sum([int(result) for result in results]) if results else None
 
 def extract_data(coords_page_1, coords_page_2, pdf_path):
     extracted_data = {}
+    line4 = 0
+    line5 = 0
     # Extract data from page 1
     for key, rect in coords_page_1.items():
         text = extract_text(pdf_path, rect, 0)
         if "(" in text:
             text = text.replace("(", "-").replace(")", "")
-        extracted_data[key] = text
-
-    # Extract data from page 2
+        if key == "line89":
+            extracted_data[key] = extract_line_of_2_value(text)
+        else:
+            extracted_data[key] = text
+    
     for key, rect in coords_page_2.items():
         text = extract_text(pdf_path, rect, 0)
         if "(" in text:
             text = text.replace("(", "-").replace(")", "")
-        if key == "part5":
-            extracted_data[key] = extract_amortization_value(text)
-        else:
-            extracted_data[key] = text
+        extracted_data[key] = text
+
     return extracted_data
 
-def scheduleC_extractor(pdf_path, spreadsheet_id):
+def form1120_extractor(pdf_path, spreadsheet_id):
     coords_page_1 = {
-        "line6": (477, 325, 576, 334),
-        "line12": (195, 421, 295, 431),
-        "line13": (196, 434, 294, 467),
-        "line30": (476, 577, 576, 634),
-        "line31": (476, 638, 577, 670),
-        "line24b": (477, 490, 574, 500)
+        "line30": (504, 553, 575, 563),
+        "line31": (504, 565, 575, 575),
+        "line89": (504, 265, 576, 287),
+        "line10": (504, 289, 575, 299),
+        "line20": (504, 409, 576, 419),
+        "line21": (505, 422, 576, 430),
+        "line26": (504, 481, 576, 490),
+        "line29c": (505, 518, 575, 550)
     }
+    
     coords_page_2 = {
-        "line44a": (104, 408, 201, 418),
-        "part5": (35, 532, 576, 742)
+        "line17d": (497, 325, 575, 335),
+        "line5c": (173, 627, 237, 635)
     }
+
+
     cell_map = {
-        "line6": "G17",
-        "line12": "G18",
-        "line13": "G19",
-        "line30": "G21",
-        "line31": "G16",
-        "line24b": "G20",
-        "line44a": "G23",
-        "part5": "G22"
+        "line30": "G100",
+        "line31": "G101",
+        "line89": "G102",
+        "line10": "G103",
+        "line20": "G104",
+        "line21": "G105",
+        "line26": "G106",
+        "line29c": "G107",
+        "line17d": "G108",
+        "line5c": "G109"
     }
 
     extracted_data = extract_data(coords_page_1, coords_page_2, pdf_path)

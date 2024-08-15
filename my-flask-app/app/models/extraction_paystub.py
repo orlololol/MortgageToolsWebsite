@@ -72,4 +72,4 @@ def paystub_extractor(project_id, location, processor_id, file_path, mime_type, 
         "Commission": "C52",
         "Bonus": "C39"  # Combined cell for Bonus and Overtime
     } 
-    sheet_populator.populate_sheet(False, json_data, general_cell_map, earnings_cell_map)
+    sheet_populator.populate_sheet(False, False, json_data, general_cell_map, earnings_cell_map)

@@ -34,7 +34,7 @@ def process_documents():
         file.save(file_path)
 
         try:
-            if document_type in ['paystub', 'w2']:
+            if document_type in ['paystub', 'w2', 'eoy_paystub']:
                 process_document_w2_paystub(file_path, 'application/pdf', document_type, spreadsheet_id)
             elif document_type == '1040':
                 process_document_fannie_mae(file_path, document_type, file.filename, spreadsheet_id)

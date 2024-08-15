@@ -21,67 +21,74 @@ def extract_text(pdf_path, coords, page_number):
     print(f"Extracted text: {text.strip()}")
     return text.strip()
 
-def extract_amortization_value(text_block):
+def extract_line_of_3_value(text_block):
     """Extracts the monetary value for lines containing 'Amortization' or 'Casualty' followed by 'Loss'."""
     lines = text_block.split('\n')
+    results = []
     for i, line in enumerate(lines):
-        # Check for the presence of keywords in the current line
-        if re.search(r'\bamortization\b', line, re.IGNORECASE) and re.search(r'\bloss\b', line, re.IGNORECASE) or \
-           re.search(r'\bcasualty\b', line, re.IGNORECASE) and re.search(r'\bloss\b', line, re.IGNORECASE):
-            # Check if the next line exists and extract the monetary value
-            if i + 1 < len(lines):
-                next_line = lines[i + 1]
-                matches = re.findall(r'\d+[\.,\d+]*', next_line)
-                if matches:
-                    # Return the first match, removing commas and periods for clean numeric value
-                    return matches[0].replace(',', '').replace('.', '')
-    return None
+        results.append(line.replace(',', '').replace('.', '')) 
+    return sum([int(result) for result in results]) if results else None
 
-def extract_data(coords_page_1, coords_page_2, pdf_path):
+def extract_data(coords_page_1, coords_page_2, coords_page_3, pdf_path):
     extracted_data = {}
+    line4 = 0
+    line5 = 0
     # Extract data from page 1
     for key, rect in coords_page_1.items():
         text = extract_text(pdf_path, rect, 0)
         if "(" in text:
             text = text.replace("(", "-").replace(")", "")
-        extracted_data[key] = text
+        if key == "line4":
+            line4 = float(text)
+        elif key == "line5":
+            line5 = float(text)
+        else:
+            extracted_data[key] = text
+    extracted_data["line4-5"] = str(line4+line5)
 
-    # Extract data from page 2
     for key, rect in coords_page_2.items():
         text = extract_text(pdf_path, rect, 0)
         if "(" in text:
             text = text.replace("(", "-").replace(")", "")
-        if key == "part5":
-            extracted_data[key] = extract_amortization_value(text)
-        else:
-            extracted_data[key] = text
+        extracted_data[key] = text
+    
+    for key, rect in coords_page_3.items():
+        text = extract_text(pdf_path, rect, 0)
+        if "(" in text:
+            text = text.replace("(", "-").replace(")", "")
+        extracted_data[key] = text
+
     return extracted_data
 
-def scheduleC_extractor(pdf_path, spreadsheet_id):
+def form1120S_extractor(pdf_path, spreadsheet_id):
     coords_page_1 = {
-        "line6": (477, 325, 576, 334),
-        "line12": (195, 421, 295, 431),
-        "line13": (196, 434, 294, 467),
-        "line30": (476, 577, 576, 634),
-        "line31": (476, 638, 577, 670),
-        "line24b": (477, 490, 574, 500)
+        "line4" : (497, 265, 576, 275),
+        "line5" : (497, 277, 576, 287),
+        "line14" : (498, 385, 575, 395),
+        "line15" : (497, 397, 576, 407),
+        "line20" : (498, 458, 576, 466)
     }
+    
     coords_page_2 = {
-        "line44a": (104, 408, 201, 418),
-        "part5": (35, 532, 576, 742)
-    }
-    cell_map = {
-        "line6": "G17",
-        "line12": "G18",
-        "line13": "G19",
-        "line30": "G21",
-        "line31": "G16",
-        "line24b": "G20",
-        "line44a": "G23",
-        "part5": "G22"
+        "line17d" : (497, 421, 576, 431)
     }
 
-    extracted_data = extract_data(coords_page_1, coords_page_2, pdf_path)
+    coords_page_3 = {
+        "line3b" : (167, 194, 222, 203),
+        "line3b2" : (65, 204, 223, 215)
+    }
+
+
+    cell_map = {
+        "line4-5": "G79",
+        "line14": "G80",
+        "line15": "G81",
+        "line20": "G82",
+        "line17d": "G83",
+        "line3b": "G84",
+    }
+
+    extracted_data = extract_data(coords_page_1, coords_page_2, coords_page_3, pdf_path)
     print(f"Extracted data: {extracted_data}")
     
     google_sheets_credentials = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
