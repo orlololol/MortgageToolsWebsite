@@ -185,9 +185,15 @@ class SheetPopulator:
                     elif type == "pay_date":
                         eoy_paydate = value
                         eoy_month, eoy_day, eoy_month_days, eoy_year = self.get_number_of_days_in_this_month(eoy_paydate)
-                        self.worksheet.update_value(f"F24", eoy_year)
+                        if self.worksheet.cell("F24").value == "" or self.worksheet.cell("E24").value == "0":
+                            self.worksheet.update_value(f"F24", eoy_year)
+                        else:
+                            self.worksheet.update_value(f"F25", eoy_year)
                 if eoy_regular_earnings > 0:
-                    self.worksheet.update_value("C24", f"${eoy_regular_earnings:,.2f}")
+                    if self.worksheet.cell("C24").value == "" or self.worksheet.cell("C24").value == "0":
+                        self.worksheet.update_value("C24", f"${eoy_regular_earnings:,.2f}")
+                    else:
+                        self.worksheet.update_value("C25", f"${eoy_regular_earnings:,.2f}")
         else:
             wages_tips_other_compensation = 0
             

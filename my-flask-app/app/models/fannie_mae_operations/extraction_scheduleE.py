@@ -26,8 +26,10 @@ def extract_line_of_3_value(text_block):
     lines = text_block.split('\n')
     results = []
     for i, line in enumerate(lines):
-        results.append(line.replace(',', '').replace('.', '')) 
-    return sum([int(result) for result in results]) if results else None
+        matches = re.findall(r'\d+[\.,\d+]*', line)
+        matches = [float(match) for match in matches if len(match) >= 1]
+        results.extend([float(match) for match in matches])
+    return str(sum([float(result) for result in results])) if results else None
 
 def extract_data(coords_page_1, pdf_path):
     extracted_data = {}
@@ -36,8 +38,7 @@ def extract_data(coords_page_1, pdf_path):
         text = extract_text(pdf_path, rect, 0)
         if "(" in text:
             text = text.replace("(", "-").replace(")", "")
-        extracted_data[key] = extract_line_of_3_value(text)
-
+        extracted_data[key] = text
     return extracted_data
 
 def scheduleE_extractor(pdf_path, spreadsheet_id):

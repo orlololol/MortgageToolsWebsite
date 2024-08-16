@@ -26,13 +26,13 @@ def extract_line_of_2_value(text_block):
     lines = text_block.split('\n')
     results = []
     for i, line in enumerate(lines):
-        results.append(line.replace(',', '').replace('.', '')) 
-    return sum([int(result) for result in results]) if results else None
+        matches = re.findall(r'\d+[\.,\d+]*', line)
+        matches = [float(match) for match in matches if len(match) >= 1]
+        results.extend([float(match) for match in matches])
+    return str(sum([float(result) for result in results])) if results else None
 
 def extract_data(coords_page_1, coords_page_2, pdf_path):
     extracted_data = {}
-    line4 = 0
-    line5 = 0
     # Extract data from page 1
     for key, rect in coords_page_1.items():
         text = extract_text(pdf_path, rect, 0)

@@ -26,6 +26,11 @@ const fileSchema = z.object({
     }),
 });
 
+export const formSchema = z.object({
+  document_type: z.string().min(1, "Document type is required"),
+  files: z.array(fileSchema).min(1, "At least one file is required"),
+});
+
 const documentBCSchema = z.object({
   paystub: z.array(fileSchema).max(4),
   w2: z.array(fileSchema).max(2),
