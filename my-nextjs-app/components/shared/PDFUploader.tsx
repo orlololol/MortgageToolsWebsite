@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
@@ -15,9 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { InsufficientSubscriptionModal } from "./InsufficientSubscriptionModal";
-// import { deleteEntries } from "@/app/api/googleSheets/googleSheetsServices";
 
 const fileSchema = z.object({
   file: z
@@ -28,20 +26,42 @@ const fileSchema = z.object({
     }),
 });
 
-export const formSchema = z.object({
-  document_type: z.string().min(1, "Document type is required"),
+const documentBCSchema = z.object({
+  paystub: z.array(fileSchema).max(4),
+  w2: z.array(fileSchema).max(2),
+  eoy_paystub: z.array(fileSchema).max(2),
+});
+
+const formSchemaA = z.object({
+  document_type: z.literal("1040"),
   files: z.array(fileSchema).min(1, "At least one file is required"),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+const formSchemaBC = documentBCSchema.refine(
+  (data) => {
+    const totalFiles =
+      data.paystub.filter((f) => f.file).length +
+      data.w2.filter((f) => f.file).length +
+      data.eoy_paystub.filter((f) => f.file).length;
+    return totalFiles > 0;
+  },
+  {
+    message: "At least one file is required",
+  }
+);
+
+type FormValuesA = z.infer<typeof formSchemaA>;
+type FormValuesBC = z.infer<typeof formSchemaBC>;
 
 interface PDFUploadFormProps {
   action: "Add" | "Update";
   clerkId: string;
   type: "uploadDocumentA" | "uploadDocumentBC";
   isSubscribed: boolean;
-  data?: Partial<FormValues> & { _id?: string };
+  data?: Partial<FormValuesA | FormValuesBC> & { _id?: string };
 }
+
+type FormValues = FormValuesA | FormValuesBC;
 
 const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
   action,
@@ -55,19 +75,26 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
   const router = useRouter();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const formA = useForm<FormValuesA>({
+    resolver: zodResolver(formSchemaA),
     defaultValues: {
-      document_type:
-        data.document_type || (type === "uploadDocumentBC" ? "" : "1040"),
-      files: data.files || [{ file: undefined }],
+      document_type: "1040",
+      files: [{ file: undefined }],
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "files",
+  const formBC = useForm<FormValuesBC>({
+    resolver: zodResolver(formSchemaBC),
+    defaultValues: {
+      paystub: Array(4).fill({ file: undefined }),
+      w2: Array(2).fill({ file: undefined }),
+      eoy_paystub: Array(2).fill({ file: undefined }),
+    },
   });
+
+  const form = (
+    type === "uploadDocumentA" ? formA : formBC
+  ) as UseFormReturn<FormValues>;
 
   useEffect(() => {
     const fetchSpreadsheetId = async () => {
@@ -105,17 +132,31 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
     setIsProcessing(true);
     try {
       const formData = new FormData();
-      formData.append(
-        "document_type",
-        type === "uploadDocumentBC" ? values.document_type : "1040"
-      );
       formData.append("spreadsheetId", spreadsheetId || "");
-      if (values.files[0]?.file) {
-        formData.append("file", values.files[0].file);
+
+      if (type === "uploadDocumentA") {
+        const valuesA = values as FormValuesA;
+        formData.append("document_type", valuesA.document_type);
+        if (valuesA.files[0]?.file) {
+          formData.append("file", valuesA.files[0].file);
+        } else {
+          throw new Error("No file selected");
+        }
       } else {
-        throw new Error("No file selected");
+        const valuesBC = values as FormValuesBC;
+        let fileIndex = 0;
+        for (const [docType, files] of Object.entries(valuesBC)) {
+          files.forEach((fileObj) => {
+            if (fileObj.file) {
+              formData.append(`files`, fileObj.file);
+              formData.append(`document_types`, docType);
+              fileIndex++;
+            }
+          });
+        }
       }
-      console.log("Processing PDF with data:", formData);
+
+      console.log("Processing PDF(s) with data:", formData);
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
       const response = await fetch(backendUrl, {
         method: "POST",
@@ -123,52 +164,56 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to process PDF: ${await response.text()}`);
+        throw new Error(`Failed to process PDF(s): ${await response.text()}`);
       }
 
       const result = await response.json();
       console.log("Processing result:", result);
-      alert("PDF processed successfully.");
+      if (result.results.some((r: any) => r.error)) {
+        alert(
+          "Some documents failed to process. Please check the console for details."
+        );
+      } else {
+        alert("All PDFs processed successfully.");
+      }
     } catch (error) {
-      console.error("Error processing PDF:", error);
-      alert("An error occurred while processing the PDF. Please try again.");
+      console.error("Error processing PDF(s):", error);
+      alert("An error occurred while processing the PDF(s). Please try again.");
     } finally {
       setIsProcessing(false);
     }
   }
 
-  // const onClearEntriesHandler = async () => {
-  //   if (!spreadsheetId) {
-  //     alert("No spreadsheet ID found.");
-  //     return;
-  //   }
-  //   try {
-  //     await deleteEntries(spreadsheetId, "D11:D14");
-  //     await deleteEntries(spreadsheetId, "E11:E14");
-  //     await deleteEntries(spreadsheetId, "F11:F14");
-  //     await deleteEntries(spreadsheetId, "H11:H14");
-  //     await deleteEntries(spreadsheetId, "I11:I14");
-  //     await deleteEntries(spreadsheetId, "G11:G14");
-  //     await deleteEntries(spreadsheetId, "C4:C5");
-  //     await deleteEntries(spreadsheetId, "C17:C20");
-  //     await deleteEntries(spreadsheetId, "E19:E20");
-  //     await deleteEntries(spreadsheetId, "C24");
-  //     await deleteEntries(spreadsheetId, "F24");
-  //     await deleteEntries(spreadsheetId, "C34:C41");
-  //     await deleteEntries(spreadsheetId, "G39:G41");
-  //     await deleteEntries(spreadsheetId, "E40:E41");
-  //     await deleteEntries(spreadsheetId, "C49:C51");
-  //     await deleteEntries(spreadsheetId, "G49:G51");
-  //     await deleteEntries(spreadsheetId, "C62:C64");
-  //     await deleteEntries(spreadsheetId, "G67:G69");
-  //     await deleteEntries(spreadsheetId, "C82:C84");
-  //     await deleteEntries(spreadsheetId, "E83:E84");
-  //     await deleteEntries(spreadsheetId, "G82:G84");
-  //   } catch (error) {
-  //     console.error("Error clearing entries:", error);
-  //     alert("An error occurred while clearing the entries. Please try again.");
-  //   }
-  // };
+  const renderFileInputs = (
+    name: "paystub" | "w2" | "eoy_paystub",
+    label: string,
+    count: number
+  ) => {
+    return (
+      <div className="space-y-3">
+        <FormLabel>{label}</FormLabel>
+        {Array.from({ length: count }).map((_, index) => (
+          <FormItem key={`${name}-${index}`}>
+            <FormControl>
+              <Input
+                type="file"
+                accept=".pdf"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    formBC.setValue(`${name}.${index}.file` as any, file);
+                  }
+                }}
+                className="input-field"
+                disabled={!isSubscribed}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div>
@@ -182,48 +227,10 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
         >
           <div className="flex flex-row space-x-20">
             <div className="my-4">
-              {type === "uploadDocumentBC" && (
-                <FormField
-                  control={form.control}
-                  name="document_type"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Choose your file type</FormLabel>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex flex-col space-y-1"
-                      >
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="w2" />
-                          </FormControl>
-                          <FormLabel className="font-normal">W-2</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="paystub" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Paystub</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="eoy_paystub" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            End of Past Year Paystub
-                          </FormLabel>
-                        </FormItem>
-                      </RadioGroup>
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              <div className="space-y-5">
-                {fields.map((field, index) => (
-                  <FormItem key={field.id}>
-                    <FormLabel>Upload PDF</FormLabel>
+              {type === "uploadDocumentA" ? (
+                <div className="space-y-5">
+                  <FormItem>
+                    <FormLabel>Upload 1040 PDF</FormLabel>
                     <FormControl>
                       <Input
                         type="file"
@@ -231,7 +238,7 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            form.setValue(`files.${index}.file`, file);
+                            formA.setValue("files.0.file", file);
                           }
                         }}
                         className="input-field"
@@ -240,8 +247,14 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
                     </FormControl>
                     <FormMessage />
                   </FormItem>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {renderFileInputs("paystub", "Paystub", 4)}
+                  {renderFileInputs("w2", "W-2", 2)}
+                  {renderFileInputs("eoy_paystub", "End of Year Paystub", 2)}
+                </div>
+              )}
               <div className="flex flex-col gap-4 mt-4">
                 <Button
                   type="submit"
@@ -251,16 +264,6 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
                   {isProcessing ? "Processing..." : "Process PDFs"}
                 </Button>
               </div>
-              {/* <div className="flex flex-col gap-4 mt-4">
-                <Button
-                  type="button"
-                  className="submit-button capitalize"
-                  onClick={onClearEntriesHandler}
-                  disabled={isProcessing}
-                >
-                  Clear Entries
-                </Button>
-              </div> */}
             </div>
             <div>
               {spreadsheetId && (
@@ -268,7 +271,7 @@ const PDFUploadForm: React.FC<PDFUploadFormProps> = ({
                   src={`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit?usp=sharing`}
                   width="1300px"
                   height="1000px"
-                ></iframe>
+                />
               )}
             </div>
           </div>
