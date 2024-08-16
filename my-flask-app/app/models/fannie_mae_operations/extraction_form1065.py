@@ -38,12 +38,16 @@ def extract_data(coords_page_1, coords_page_2, pdf_path):
         text = extract_text(pdf_path, rect, 0)
         if "(" in text:
             text = text.replace("(", "-").replace(")", "")
+        if text == "":
+            text = "0"
+        if text == "":
+            text = "0"
         if key == "line567":
             extracted_data[key] = extract_line_of_3_value(text)
         else:
             extracted_data[key] = text
     for key, rect in coords_page_2.items():
-        text = extract_text(pdf_path, rect, 0)
+        text = extract_text(pdf_path, rect, 5)
         if "(" in text:
             text = text.replace("(", "-").replace(")", "")
         extracted_data[key] = text

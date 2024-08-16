@@ -28,6 +28,8 @@ def extract_data(coords_page_1, pdf_path):
         text = extract_text(pdf_path, rect, 0)
         if "(" in text:
             text = text.replace("(", "-").replace(")", "")
+        if text == "":
+            text = "0"
         extracted_data[key] = text
 
     return extracted_data

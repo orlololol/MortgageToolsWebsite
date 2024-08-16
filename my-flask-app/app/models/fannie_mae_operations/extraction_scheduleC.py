@@ -44,11 +44,13 @@ def extract_data(coords_page_1, coords_page_2, pdf_path):
         text = extract_text(pdf_path, rect, 0)
         if "(" in text:
             text = text.replace("(", "-").replace(")", "")
+        if text == "":
+            text = "0"
         extracted_data[key] = text
 
     # Extract data from page 2
     for key, rect in coords_page_2.items():
-        text = extract_text(pdf_path, rect, 0)
+        text = extract_text(pdf_path, rect, 1)
         if "(" in text:
             text = text.replace("(", "-").replace(")", "")
         if key == "part5":

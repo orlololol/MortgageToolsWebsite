@@ -30,16 +30,15 @@ def extract_data(coords_page_1, pdf_path):
         text = extract_text(pdf_path, rect, 0)
         if "(" in text:
             text = text.replace("(", "-").replace(")", "")
-        text = extract_text(pdf_path, rect, 0)
-        if "(" in text:
-            text = text.replace("(", "-").replace(")", "")
+        if text == "":
+            text = "0"
         if key == "line2":
             line2 = float(text)
         elif key == "line3":
             line3 = float(text)
         else:
             extracted_data[key] = text
-    extracted_data["line2-3"] = line2 + line3
+    extracted_data["line2-3"] = str(line2 + line3)
     return extracted_data
 
 def scheduleK1_1065_extractor(pdf_path, spreadsheet_id):

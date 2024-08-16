@@ -23,10 +23,12 @@ def extract_text(pdf_path, coords, page_number):
 
 def extract_line32(text_block):
     """Extracts the monetary value for lines containing 'Amortization' or 'Casualty' followed by 'Loss'."""
-    lines = text_block.split('\n').lower()
+    lines = text_block.split('\n')
     results = []
     results2 = 0
     for i, line in enumerate(lines):
+        # Check for the presence of keywords in the current line
+        line = line.lower()
         # Check for the presence of keywords in the current line
         if re.search(r'\bamortization\b', line, re.IGNORECASE) or \
             re.search(r'\bcasualty\b', line, re.IGNORECASE) and re.search(r'\bloss\b', line, re.IGNORECASE) or \
@@ -64,6 +66,8 @@ def extract_data(coords_page_1, pdf_path):
         text = extract_text(pdf_path, rect, 0)
         if "(" in text:
             text = text.replace("(", "-").replace(")", "")
+        if text == "":
+            text = "0"
         if key == "line3a":
             line3a = float(text)
         elif key == "line3b":
