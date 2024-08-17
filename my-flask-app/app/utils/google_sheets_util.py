@@ -43,14 +43,14 @@ class SheetPopulator:
             delta = (end_date - start_date).days + 1  # including end date
             # print(f"Delta: {delta}")
             if delta == 7:
-                return 'C25', delta  # Weekly
+                return 'C37', delta  # Weekly
             elif delta == 14:
-                return 'C26', delta  # Bi-weekly
+                return 'C35', delta  # Bi-weekly
             elif delta in [15, 16]:
-                return 'C27', delta  # Semi-monthly
+                return 'C36', delta  # Semi-monthly
             elif 28 <= delta <= 31:
-                return 'C28', delta  # Monthly
-        return 'C28', delta  # Default to monthly if undetermined
+                return 'C34', delta  # Monthly
+        return 'C34', delta  # Default to monthly if undetermined
     
     def get_number_of_days_in_this_month(self, date_str):
         date = datetime.strptime(date_str, "%m/%d/%Y")
@@ -94,6 +94,7 @@ class SheetPopulator:
         if not is_w2:
             if not is_eoy:
                 combined_earnings = 0
+                combined_hours = 0
                 first_earning_processed = False
                 start_date, end_date, earnings_this_period, paydate = None, None, None, None
                 regular_earnings = 0
@@ -117,12 +118,14 @@ class SheetPopulator:
                         
                         if earning_type == "Regular":
                             regular_earnings += float(parts[-1].replace(',', '').replace('$', ''))
+                            if len(parts) == 5:    
+                                combined_hours += float(parts[-3])
                             if not first_earning_processed:
                                 if len(parts) == 3:
                                     is_salary = True
                                 else:
                                     self.worksheet.update_value(f"E{11+row_offset}", parts[-4]) # Rate
-                                    self.worksheet.update_value(f"F{11+row_offset}", parts[-3]) # Hours
+                                    # self.worksheet.update_value(f"F{11+row_offset}", parts[-3]) # Hours
                                 first_earning_processed = True
                         elif earning_type == "Commission":
                             # Update only YTD for Commission
@@ -157,13 +160,14 @@ class SheetPopulator:
                         month, day, month_days, year = self.get_number_of_days_in_this_month(paydate)
                         cell_value = round(day/month_days, 2) + month - 1  # Normalize to a value between 0 and 1
                         self.worksheet.update_value(f"I{11 + row_offset}", cell_value)
-                        self.worksheet.update_value(f"G39", cell_value)
-                        self.worksheet.update_value(f"G49", cell_value)
-                        self.worksheet.update_value(f"G67", cell_value)
-                        self.worksheet.update_value(f"G82", cell_value)
+                        # self.worksheet.update_value(f"G39", cell_value)
+                        # self.worksheet.update_value(f"G49", cell_value)
+                        # self.worksheet.update_value(f"G67", cell_value)
+                        # self.worksheet.update_value(f"G82", cell_value)
             
                 if regular_earnings > 0:
                     self.worksheet.update_value(f"H{11 + row_offset}", f"${regular_earnings:,.2f}")
+                    self.worksheet.update_value(f"F{11 + row_offset}", combined_hours)
 
 
                 # if combined_earnings > 0:
